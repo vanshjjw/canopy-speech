@@ -60,7 +60,6 @@ class SpeechToTextModel(nn.Module):
         
         # Initialize Llama model
         self.llama = LlamaForCausalLM.from_pretrained(llama_model_name)
-        # self.tokenizer = LlamaTokenizer.from_pretrained(llama_model_name)
 
         if hidden_dims is None:
             hidden_dims = [2048, 1024, 2048]
@@ -72,53 +71,54 @@ class SpeechToTextModel(nn.Module):
             output_dim=self.projection_dim,
             hidden_dims=hidden_dims
         )
-        
+
     def forward(
-        self,
-        input_features: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        labels: Optional[torch.Tensor] = None,
+            self,
+            input_features: torch.Tensor,
+            input_ids: torch.Tensor,
+            labels: Optional[torch.Tensor] = None
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
 
-        whisper_outputs = self.whisper.encoder(
+        whisper_latents = self.whisper.encoder(
             input_features,
-            attention_mask=attention_mask,
             return_dict=True
         )
-        
-        projected_features = self.adaptor(whisper_outputs.last_hidden_state)
-        
+        audio_embeddings = self.adaptor.forward(whisper_latents.last_hidden_state)  # [B, S_1, D]
+        normal_embeddings = self.llama_embedding(input_ids)  # [B, S_2, D]
+
+        combined_embeddings = torch.cat([audio_embeddings, normal_embeddings], dim=1)  # [B, S_1 + S_2, D]
+
         llama_outputs = self.llama(
-            inputs_embeds=projected_features,
-            attention_mask=attention_mask,
+            inputs_embeds=combined_embeddings,
             labels=labels,
             return_dict=True
         )
 
         return llama_outputs.logits, llama_outputs.loss
 
-
     def generate(
-        self,
-        input_features: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        max_length: int = 100,
-        **kwargs
+            self,
+            input_features: torch.Tensor,
+            input_ids: Optional[torch.Tensor] = None,
+            max_new_tokens: int = 100,
+            **kwargs
     ) -> torch.Tensor:
 
-        whisper_outputs = self.whisper.encoder(
+        whisper_latents = self.whisper.encoder(
             input_features,
-            attention_mask=attention_mask,
             return_dict=True
         )
-        
-        projected_features = self.adaptor(whisper_outputs.last_hidden_state)
-        
+        audio_embeddings = self.adaptor.forward(whisper_latents.last_hidden_state)
+
+        if input_ids is not None:
+            normal_embeddings = self.llama_embedding(input_ids)
+            combined_embeddings = torch.cat([audio_embeddings, normal_embeddings], dim=1)
+        else:
+            combined_embeddings = audio_embeddings  # Should be [B,
+
         generated_ids = self.llama.generate(
-            inputs_embeds=projected_features,
-            attention_mask=attention_mask,
-            max_length=max_length,
+            inputs_embeds=combined_embeddings,
+            max_new_tokens=max_new_tokens,
             **kwargs
         )
-        
-        return generated_ids 
+        return generated_ids
