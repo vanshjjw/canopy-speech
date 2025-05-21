@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from transformers import WhisperModel, LlamaForCausalLM, LlamaTokenizer
+from transformers import WhisperModel, LlamaForCausalLM
 from typing import Optional, Tuple
 
 class Adaptor(nn.Module):
@@ -84,7 +84,7 @@ class SpeechToTextModel(nn.Module):
             return_dict=True
         )
         audio_embeddings = self.adaptor.forward(whisper_latents.last_hidden_state)  # [B, S_1, D]
-        normal_embeddings = self.llama_embedding(input_ids)  # [B, S_2, D]
+        normal_embeddings = self.llama.model.embed_tokens(input_ids)  # [B, S_2, D]
 
         combined_embeddings = torch.cat([audio_embeddings, normal_embeddings], dim=1)  # [B, S_1 + S_2, D]
 
