@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
-from transformers import WhisperModel, LlamaForCausalLM
+from transformers import WhisperModel, AutoModelForCausalLM
 from typing import Optional, Tuple
 
-class Adaptor(nn.Module):
+class Adapter(nn.Module):
     def __init__(self, input_dim: int, output_dim: int, hidden_dims: list):
         super().__init__()
         
@@ -53,21 +53,21 @@ class SpeechToTextModel(nn.Module):
         super().__init__()
 
         # Initialize Whisper encoder
-        self.whisper = WhisperModel.from_pretrained(whisper_model_name)
+        self.whisper_encoder = WhisperModel.from_pretrained(whisper_model_name)
         if not train_whisper:
-            for param in self.whisper.parameters():
+            for param in self.whisper_encoder.parameters():
                 param.requires_grad = False
         
         # Initialize Llama model
-        self.llama = LlamaForCausalLM.from_pretrained(llama_model_name)
+        self.llama_model = AutoModelForCausalLM.from_pretrained(llama_model_name)
 
         if hidden_dims is None:
             hidden_dims = [2048, 1024, 2048]
 
-        self.projection_dim = self.llama.config.hidden_size
+        self.projection_dim = self.llama_model.config.hidden_size
 
-        self.adaptor = Adaptor(
-            input_dim=self.whisper.config.hidden_size,
+        self.adapter = Adapter(
+            input_dim=self.whisper_encoder.config.hidden_size,
             output_dim=self.projection_dim,
             hidden_dims=hidden_dims
         )
@@ -79,27 +79,29 @@ class SpeechToTextModel(nn.Module):
             labels: Optional[torch.Tensor] = None
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
 
-        whisper_latents = self.whisper.encoder(
+        whisper_latents = self.whisper_encoder.encoder(
             input_features,
             return_dict=True
         )
-        audio_embeddings = self.adaptor.forward(whisper_latents.last_hidden_state)  # [B, S_1, D]
-        normal_embeddings = self.llama.model.embed_tokens(input_ids)  # [B, S_2, D]
+        audio_embeddings = self.adapter(whisper_latents.last_hidden_state)  # [B, S_1, D]
+        text_embeddings = self.llama_model.model.embed_tokens(input_ids)  # [B, S_2, D]
 
-        combined_embeddings = torch.cat([audio_embeddings, normal_embeddings], dim=1)  # [B, S_1 + S_2, D]
+        combined_embeddings = torch.cat([audio_embeddings, text_embeddings], dim=1)  # [B, S_1 + S_2, D]
 
-        bs = labels.shape[0]
-        audio_len = audio_embeddings.shape[1]
-        audio_pad = torch.full((bs, audio_len), -100, dtype=labels.dtype, device=labels.device)
-        labels = torch.cat([audio_pad, labels], dim=1)
+        batch_size = labels.shape[0]
+        audio_length = audio_embeddings.shape[1]
 
-        llama_outputs = self.llama(
+        # Add -100 padding to labels corresponding to audio embeds
+        label_padding = torch.full((batch_size, audio_length), -100, dtype=labels.dtype, device=labels.device)
+        labels = torch.cat([label_padding, labels], dim=1)
+
+        llama_outputs = self.llama_model(
             inputs_embeds=combined_embeddings,
             labels=labels,
             return_dict=True
         )
 
-        return {'logits': llama_outputs.logits, 'loss': llama_outputs.loss.mean()}
+        return llama_outputs
 
     def generate(
             self,
@@ -109,11 +111,11 @@ class SpeechToTextModel(nn.Module):
             **kwargs
     ) -> torch.Tensor:
 
-        whisper_latents = self.whisper.encoder(
+        whisper_latents = self.whisper_encoder.encoder(
             input_features,
             return_dict=True
         )
-        audio_embeddings = self.adaptor.forward(whisper_latents.last_hidden_state)
+        audio_embeddings = self.adapter.forward(whisper_latents.last_hidden_state)
 
         if input_ids is not None:
             normal_embeddings = self.llama_embedding(input_ids)
@@ -121,7 +123,7 @@ class SpeechToTextModel(nn.Module):
         else:
             combined_embeddings = audio_embeddings
 
-        generated_ids = self.llama.generate(
+        generated_ids = self.llama_model.generate(
             inputs_embeds=combined_embeddings,
             max_new_tokens=max_new_tokens,
             **kwargs
