@@ -59,7 +59,6 @@ class SpeechToTextModel(nn.Module):
         # Initialize Llama model
         self.llama_model = AutoModelForCausalLM.from_pretrained(
             llama_model_name,
-            attention_implementation="flash_attention_2",
             torch_dtype=torch.bfloat16,
             device_map="auto",
         )
@@ -118,8 +117,6 @@ class SpeechToTextModel(nn.Module):
                 device=attention_mask.device
             )
             attention_mask = torch.cat([attend, attention_mask], dim=1)
-
-        print(attention_mask.shape, combined_embeddings.shape, labels.shape)
 
         llama_outputs = self.llama_model(
             inputs_embeds=combined_embeddings,
