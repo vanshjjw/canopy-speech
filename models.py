@@ -39,9 +39,6 @@ class Adapter(nn.Module):
         return outputs
 
 
-
-
-
 class SpeechToTextModel(nn.Module):
     def __init__(
         self,
@@ -60,7 +57,12 @@ class SpeechToTextModel(nn.Module):
                 param.requires_grad = False
         
         # Initialize Llama model
-        self.llama_model = AutoModelForCausalLM.from_pretrained(llama_model_name)
+        self.llama_model = AutoModelForCausalLM.from_pretrained(
+            llama_model_name,
+            attention_implementation="flash_attention_2",
+            torch_dtype=torch.bfloat16,
+            device_map="auto",
+        )
 
         # Freeze all Llama parameters by default
         for param in self.llama_model.parameters():
@@ -87,7 +89,8 @@ class SpeechToTextModel(nn.Module):
             self,
             input_features: torch.Tensor,
             input_ids: torch.Tensor,
-            labels: Optional[torch.Tensor] = None
+            labels: Optional[torch.Tensor],
+            attention_mask: Optional[torch.Tensor] = None
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
 
         whisper_latents = self.whisper_encoder.encoder(
@@ -106,9 +109,22 @@ class SpeechToTextModel(nn.Module):
         label_padding = torch.full((batch_size, audio_length), -100, dtype=labels.dtype, device=labels.device)
         labels = torch.cat([label_padding, labels], dim=1)
 
+        # Add attention +1 to audio embeds
+        if attention_mask is not None:
+            attend = torch.full(
+                (batch_size, audio_length),
+                1,
+                dtype=attention_mask.dtype,
+                device=attention_mask.device
+            )
+            attention_mask = torch.cat([attend, attention_mask], dim=1)
+
+        print(attention_mask.shape, combined_embeddings.shape, labels.shape)
+
         llama_outputs = self.llama_model(
             inputs_embeds=combined_embeddings,
             labels=labels,
+            attention_mask=attention_mask,
             return_dict=True
         )
 
@@ -126,7 +142,7 @@ class SpeechToTextModel(nn.Module):
             input_features,
             return_dict=True
         )
-        audio_embeddings = self.adapter.forward(whisper_latents.last_hidden_state)
+        audio_embeddings = self.adapter(whisper_latents.last_hidden_state)
 
         if input_ids is not None:
             normal_embeddings = self.llama_embedding(input_ids)

@@ -13,7 +13,8 @@ model = SpeechToTextModel(
     whisper_model_name=whisper_model_name,
     llama_model_name=llama_model_name,
     hidden_dims=[2048, 1024, 2048, 1024, 2048],
-    train_whisper=False
+    train_whisper=False,
+    train_llama=False
 ).cuda()
 
 print("Loading dataset...")

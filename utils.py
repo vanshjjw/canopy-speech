@@ -30,6 +30,7 @@ class LibriSpeechDataCollator:
             add_special_tokens=False
         )
         input_ids = tokenized.input_ids
+        attention_mask = tokenized.attention_mask
 
         separator_token = torch.full((batch_size, 1), self.separator_token_id, dtype=input_ids.dtype)
         input_ids_prepended = torch.cat([separator_token, input_ids], dim=1)
