@@ -48,11 +48,12 @@ class SpeechToTextModel(nn.Module):
         whisper_model_name: str,
         llama_model_name: str,
         hidden_dims: list = None,
-        train_whisper: bool = True,
+        train_whisper: bool = False,
+        train_llama: bool = False,
     ):
         super().__init__()
 
-        # Initialize Whisper encoder
+        # Initialize Whisper Encoder
         self.whisper_encoder = WhisperModel.from_pretrained(whisper_model_name)
         if not train_whisper:
             for param in self.whisper_encoder.parameters():
@@ -60,6 +61,16 @@ class SpeechToTextModel(nn.Module):
         
         # Initialize Llama model
         self.llama_model = AutoModelForCausalLM.from_pretrained(llama_model_name)
+
+        # Freeze all Llama parameters by default
+        for param in self.llama_model.parameters():
+            param.requires_grad = False
+
+        # Unfreeze selective layers if specified
+        if train_llama:
+            last_layer = self.llama_model.model.layers[-1]
+            for param in last_layer.parameters():
+                param.requires_grad = True
 
         if hidden_dims is None:
             hidden_dims = [2048, 1024, 2048]

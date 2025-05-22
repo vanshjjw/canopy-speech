@@ -18,7 +18,7 @@ class LibriSpeechDataCollator:
             sampling_rate=16000,
             return_tensors="pt",
         )
-        input_features = audio_inputs.input_features
+        input_features = audio_inputs.input_features  # size [B, 80, 1500]
         batch_size, seq_audio, _ = input_features.shape
 
         self.tokenizer.pad_token = self.tokenizer.eos_token
@@ -41,3 +41,14 @@ class LibriSpeechDataCollator:
             "input_ids": input_ids_prepended,
             "labels": labels
         }
+
+
+
+@dataclass
+class VoiceAssistantDataCollator:
+    whisper_processor: WhisperProcessor
+    tokenizer: PreTrainedTokenizer
+    separator_token_id: int = 128000
+
+    def __call__(self, batch):
+        pass
