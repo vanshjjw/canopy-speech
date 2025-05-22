@@ -51,7 +51,11 @@ class SpeechToTextModel(nn.Module):
         super().__init__()
 
         # Initialize Whisper Encoder
-        self.whisper_encoder = WhisperModel.from_pretrained(whisper_model_name)
+        self.whisper_encoder = WhisperModel.from_pretrained(
+            whisper_model_name,
+            torch_dtype=torch.bfloat16,
+            device_map="auto",
+        )
         if not train_whisper:
             for param in self.whisper_encoder.parameters():
                 param.requires_grad = False

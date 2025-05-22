@@ -29,9 +29,8 @@ model.train()
 
 training_args = TrainingArguments(
     output_dir="./v1-checkpoints",
-    fsdp="full_shard auto_wrap",
     overwrite_output_dir=True,
-    per_device_train_batch_size=2,
+    per_device_train_batch_size=1,
     num_train_epochs=1,
     logging_steps=10,
     save_steps=10,

@@ -19,8 +19,10 @@ class LibriSpeechDataCollator:
             return_tensors="pt",
         )
         input_features = audio_inputs.input_features  # size [B, 80, 1500]
-        batch_size, seq_audio, _ = input_features.shape
+        input_features = input_features.to(torch.bfloat16)
 
+
+        batch_size, seq_audio, _ = input_features.shape
         self.tokenizer.pad_token = self.tokenizer.eos_token
         tokenized = self.tokenizer(
             texts,
