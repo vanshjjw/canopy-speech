@@ -35,14 +35,17 @@ class LibriSpeechDataCollator:
         separator_token = torch.full((batch_size, 1), self.separator_token_id, dtype=input_ids.dtype)
         input_ids_prepended = torch.cat([separator_token, input_ids], dim=1)
 
+        attend_to_separator = torch.full((batch_size, 1), 1, dtype=attention_mask.dtype)
+        attention_mask_prepended = torch.cat([attend_to_separator, attention_mask], dim=1)
+
         labels = input_ids_prepended.clone()
 
         return {
             "input_features": input_features,
             "input_ids": input_ids_prepended,
+            "attention_mask": attention_mask_prepended,
             "labels": labels
         }
-
 
 
 @dataclass

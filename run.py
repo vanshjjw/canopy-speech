@@ -15,30 +15,30 @@ model = SpeechToTextModel(
     hidden_dims=[2048, 1024, 2048, 1024, 2048],
     train_whisper=False,
     train_llama=False
-).cuda()
+)
 
-print("Loading dataset...")
+print("Loading datasets...")
 
 dataset = load_dataset(dataset_name, 'clean', split='train.100')
 
 processor = WhisperProcessor.from_pretrained(whisper_model_name)
 tokenizer = AutoTokenizer.from_pretrained(llama_model_name)
 
-print("starts...")
+print("Training starts...")
 model.train()
 
 training_args = TrainingArguments(
     output_dir="./v1-checkpoints",
+    fsdp="full_shard auto_wrap",
     overwrite_output_dir=True,
-    per_device_train_batch_size=1,
+    per_device_train_batch_size=2,
     num_train_epochs=1,
     logging_steps=10,
-    save_steps=100,
+    save_steps=10,
     bf16=True,
     remove_unused_columns=False,
-    learning_rate=5e-5,
-    report_to="none",
-    save_safetensors=False,
+    learning_rate=1e-6,
+    report_to="none"
 )
 
 trainer = Trainer(
