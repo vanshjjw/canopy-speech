@@ -34,19 +34,10 @@ class LibriSpeechDataCollator:
         separator_token = torch.full((batch_size, 1), self.separator_token_id, dtype=input_ids.dtype)
         input_ids_prepended = torch.cat([separator_token, input_ids], dim=1)
 
-        labels = LibriSpeechDataCollator._build_labels(
-            input_ids=input_ids_prepended,
-            audio_len=seq_audio
-        )
+        labels = input_ids_prepended.clone()
 
         return {
             "input_features": input_features,
             "input_ids": input_ids_prepended,
             "labels": labels
         }
-
-    @staticmethod
-    def _build_labels(input_ids: torch.Tensor, audio_len: int) -> torch.Tensor:
-        batch_size, seq_len = input_ids.shape
-        audio_pad = torch.full((batch_size, audio_len), -100, dtype=input_ids.dtype, device=input_ids.device)
-        return torch.cat([audio_pad, input_ids], dim=1)

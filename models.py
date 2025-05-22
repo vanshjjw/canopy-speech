@@ -88,13 +88,18 @@ class SpeechToTextModel(nn.Module):
 
         combined_embeddings = torch.cat([audio_embeddings, normal_embeddings], dim=1)  # [B, S_1 + S_2, D]
 
+        bs = labels.shape[0]
+        audio_len = audio_embeddings.shape[1]
+        audio_pad = torch.full((bs, audio_len), -100, dtype=labels.dtype, device=labels.device)
+        labels = torch.cat([audio_pad, labels], dim=1)
+
         llama_outputs = self.llama(
             inputs_embeds=combined_embeddings,
             labels=labels,
             return_dict=True
         )
 
-        return llama_outputs.logits, llama_outputs.loss
+        return {'logits': llama_outputs.logits, 'loss': llama_outputs.loss.mean()}
 
     def generate(
             self,
@@ -114,7 +119,7 @@ class SpeechToTextModel(nn.Module):
             normal_embeddings = self.llama_embedding(input_ids)
             combined_embeddings = torch.cat([audio_embeddings, normal_embeddings], dim=1)
         else:
-            combined_embeddings = audio_embeddings  # Should be [B,
+            combined_embeddings = audio_embeddings
 
         generated_ids = self.llama.generate(
             inputs_embeds=combined_embeddings,
