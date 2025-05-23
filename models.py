@@ -130,7 +130,7 @@ class SpeechToTextModel(nn.Module):
             return_dict=True
         )
 
-        return llama_outputs
+        return {'loss': llama_outputs.loss, 'logits': llama_outputs.logits}
 
     def generate(
             self,
