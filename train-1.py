@@ -3,8 +3,8 @@ from models import SpeechToTextModel
 from transformers import WhisperProcessor, TrainingArguments, Trainer, AutoTokenizer
 from utils import LibriSpeechDataCollator
 
-import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+# import os
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 print("Loading models...")
 
@@ -52,4 +52,4 @@ trainer = Trainer(
 )
 
 trainer.train()
-trainer.save_model("./v1-checkpoints")
+trainer.save_model("./v1-model/")

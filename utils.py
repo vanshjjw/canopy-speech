@@ -1,7 +1,7 @@
+import torch
+import torchaudio
 from dataclasses import dataclass
 from transformers import WhisperProcessor, PreTrainedTokenizer
-import torchaudio
-import torch
 
 @dataclass
 class LibriSpeechDataCollator:
@@ -55,7 +55,8 @@ class LibriSpeechDataCollator:
 class GPTVoiceAssistantDataCollator:
     whisper_processor: WhisperProcessor
     tokenizer: PreTrainedTokenizer
-    resampler: torchaudio.transforms.Resample
+
+    resampler = torchaudio.transforms.Resample(orig_freq=22050, new_freq=16000)
     separator_token_id: int = 128000
     base_index: int = 1616
     switch_every: int = 4
