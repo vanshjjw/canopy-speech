@@ -36,8 +36,8 @@ model.train()
 training_args = TrainingArguments(
     output_dir="./v1-checkpoints",
     overwrite_output_dir=True,
-    per_device_train_batch_size=3,
-    max_steps=10000,
+    per_device_train_batch_size=5,
+    max_steps=1000,
     logging_steps=10,
     save_steps=500,
     bf16=True,
