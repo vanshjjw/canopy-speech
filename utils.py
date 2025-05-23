@@ -43,6 +43,11 @@ class LibriSpeechDataCollator:
 
         labels = input_ids_prepended.clone()
 
+        # print(f"input_features type {input_features.dtype}")
+        # print(f"input_ids type {input_ids.dtype}")
+        # print(f"attention_mask type {attention_mask.dtype}")
+        # print(f"labels type {labels.dtype}")
+
         return {
             "input_features": input_features,
             "input_ids": input_ids_prepended,

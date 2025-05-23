@@ -54,7 +54,6 @@ class SpeechToTextModel(nn.Module):
         self.whisper_encoder = WhisperModel.from_pretrained(
             whisper_model_name,
             torch_dtype=torch.bfloat16,
-            device_map="auto",
         )
         if not train_whisper:
             for param in self.whisper_encoder.parameters():
@@ -64,7 +63,6 @@ class SpeechToTextModel(nn.Module):
         self.llama_model = AutoModelForCausalLM.from_pretrained(
             llama_model_name,
             torch_dtype=torch.bfloat16,
-            device_map="auto",
         )
 
         # Freeze all Llama parameters by default

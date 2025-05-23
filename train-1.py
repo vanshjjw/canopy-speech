@@ -2,6 +2,7 @@ from datasets import load_dataset
 from models import SpeechToTextModel
 from transformers import WhisperProcessor, TrainingArguments, Trainer, AutoTokenizer
 from utils import LibriSpeechDataCollator
+import torch
 
 # import os
 # os.environ["CUDA_VISIBLE_DEVICES"] = "0"
@@ -19,6 +20,8 @@ model = SpeechToTextModel(
     train_whisper=False,
     train_llama=False
 )
+
+model = model.to(torch.bfloat16)
 
 print("Loading datasets...")
 
