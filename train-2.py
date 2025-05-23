@@ -3,10 +3,17 @@ from models import SpeechToTextModel
 from transformers import WhisperProcessor, TrainingArguments, Trainer, AutoTokenizer
 from utils import GPTVoiceAssistantDataCollator
 import torch
+import os
 
 llama_model_name = "meta-llama/Llama-3.2-3B"
 whisper_model_name = "openai/whisper-base"
-ds_name = "gpt-omni/VoiceAssistant-400K"
+
+# parent_dir = os.path.dirname(os.path.abspath(__file__))
+# ds_path = os.path.join(parent_dir, "datasets--gpt-omni--VoiceAssistant-400K/")
+
+# hardcode bad, change this later
+
+ds_path = "/workspace/datasets--gpt-omni--VoiceAssistant-400K/snapshots/65dab707fcdd3d43dcfb834398aa9fed4116be3a/data"
 
 
 print("Loading models...")
@@ -25,7 +32,7 @@ processor = WhisperProcessor.from_pretrained(whisper_model_name)
 tokenizer = AutoTokenizer.from_pretrained(llama_model_name)
 
 print("Loading datasets...")
-dataset = load_dataset(ds_name, split='train', streaming=True)
+dataset = load_dataset(ds_path, split='train')
 
 print("Training starts...")
 model.train()

@@ -18,6 +18,8 @@ model = SpeechToTextModel(
     train_llama=False
 )
 
+# have to do this explicitly
+
 model = model.to(torch.bfloat16)
 model = model.cuda(0)
 
