@@ -36,13 +36,13 @@ model.train()
 training_args = TrainingArguments(
     output_dir="./v1-checkpoints",
     overwrite_output_dir=True,
-    per_device_train_batch_size=3,
-    max_steps=10000,
+    per_device_train_batch_size=2,
+    max_steps=1000,
     logging_steps=10,
     save_steps=500,
     bf16=True,
     remove_unused_columns=False,
-    learning_rate=1e-6,
+    learning_rate=5e-5,
     save_safetensors=False,
     report_to="none"
 )
