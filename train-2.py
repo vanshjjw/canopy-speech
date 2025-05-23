@@ -2,12 +2,7 @@ from datasets import load_dataset
 from models import SpeechToTextModel
 from transformers import WhisperProcessor, TrainingArguments, Trainer, AutoTokenizer
 from utils import GPTVoiceAssistantDataCollator
-
-
-# hack
-import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-
+import torch
 
 llama_model_name = "meta-llama/Llama-3.2-3B"
 whisper_model_name = "openai/whisper-base"
@@ -23,6 +18,9 @@ model = SpeechToTextModel(
     train_whisper=True,
     train_llama=True,
 )
+
+model = model.to(torch.bfloat16)
+
 processor = WhisperProcessor.from_pretrained(whisper_model_name)
 tokenizer = AutoTokenizer.from_pretrained(llama_model_name)
 

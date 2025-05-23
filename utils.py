@@ -22,7 +22,6 @@ class LibriSpeechDataCollator:
         input_features = audio_inputs.input_features  # size [B, 80, 1500]
         input_features = input_features.to(torch.bfloat16)
 
-
         batch_size, seq_audio, _ = input_features.shape
         self.tokenizer.pad_token = self.tokenizer.eos_token
         tokenized = self.tokenizer(
@@ -85,7 +84,7 @@ class GPTVoiceAssistantDataCollator:
 
             input_features.append(input_processed.squeeze(0))
 
-        input_features = torch.stack(input_features, dim=0)
+        input_features = torch.stack(input_features, dim=0).to(torch.bfloat16)
 
         is_task_answer_not_transcribe = (int(batch[0]['index']) - self.base_index) % self.switch_every == 0
         prepend = "Answer: " if is_task_answer_not_transcribe else "Transcribe: "

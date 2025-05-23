@@ -4,9 +4,6 @@ from transformers import WhisperProcessor, TrainingArguments, Trainer, AutoToken
 from utils import LibriSpeechDataCollator
 import torch
 
-# import os
-# os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-
 print("Loading models...")
 
 whisper_model_name = "openai/whisper-base"
