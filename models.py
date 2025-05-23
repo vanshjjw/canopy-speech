@@ -71,10 +71,13 @@ class SpeechToTextModel(nn.Module):
         for param in self.llama_model.parameters():
             param.requires_grad = False
 
-        # Unfreeze selective layers if specified
+        # Unfreeze llama embedding layer
         if train_llama:
             last_layer = self.llama_model.model.layers[-1]
             for param in last_layer.parameters():
+                param.requires_grad = True
+
+            for param in self.llama_model.model.embed_tokens.parameters():
                 param.requires_grad = True
 
         if hidden_dims is None:
